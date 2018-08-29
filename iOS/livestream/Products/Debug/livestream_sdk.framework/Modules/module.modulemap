@@ -1,0 +1,6 @@
+framework module livestream_sdk {
+  umbrella header "livestream_sdk.h"
+
+  export *
+  module * { export * }
+}

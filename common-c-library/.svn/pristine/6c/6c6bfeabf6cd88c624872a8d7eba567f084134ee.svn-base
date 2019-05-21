@@ -1,0 +1,117 @@
+/*
+ * author: Hunter Mun
+ *   date: 2017-03-02
+ *   file: RecvManSessionInfoTask.cpp
+ *   desc: 男士加入或退出Camshare会议室更新通知
+ */
+
+#include "RecvManSessionInfoTask.h"
+#include "ITaskManager.h"
+#include "ILiveChatClient.h"
+#include "AmfPublicParse.h"
+#include "CommonParsing.h"
+#include <json/json/json.h>
+#include <common/CheckMemoryLeak.h>
+#include <common/KLog.h>
+
+RecvManSessionInfoTask::RecvManSessionInfoTask(void)
+{
+	m_listener = NULL;
+
+	m_seq = 0;
+	m_errType = LCC_ERR_FAIL;
+	m_errMsg = "";
+}
+
+RecvManSessionInfoTask::~RecvManSessionInfoTask(void)
+{
+}
+
+// 初始化
+bool RecvManSessionInfoTask::Init(ILiveChatClientListener* listener)
+{
+	bool result = false;
+	if (NULL != listener)
+	{
+		m_listener = listener;
+		result = true;
+	}
+	return result;
+}
+
+// 处理已接收数据
+bool RecvManSessionInfoTask::Handle(const TransportProtocol* tp)
+{
+	bool result = false;
+
+	// callback 参数
+	SessionInfoItem item;
+	FileLog("LiveChatClient", "RecvManSessionInfoTask::Handle() enter");
+	AmfParser parser;
+	amf_object_handle amfRoot = parser.Decode((char*)tp->data, tp->GetDataLength());
+	if (!amfRoot.isnull()
+		&& amfRoot->type == DT_OBJECT)
+	{
+		result = ParsingSessionInfoItem(amfRoot, item);
+	}
+	FileLog("LiveChatClient", "RecvManSessionInfoTask::Handle() parse result: %d, listener: %p", result?1:0, m_listener);
+	// 通知listener
+	if (NULL != m_listener
+		&& result)
+	{
+		m_listener->OnRecvManSessionInfo(item);
+	}
+
+	return result;
+}
+
+// 获取待发送的数据，可先获取data长度，如：GetSendData(NULL, 0, dataLen);
+bool RecvManSessionInfoTask::GetSendData(void* data, unsigned int dataSize, unsigned int& dataLen)
+{
+	bool result = false;
+	// 本协议没有返回
+	return result;
+}
+
+// 获取待发送数据的类型
+TASK_PROTOCOL_TYPE RecvManSessionInfoTask::GetSendDataProtocolType()
+{
+	return JSON_PROTOCOL;
+}
+
+// 获取命令号
+int RecvManSessionInfoTask::GetCmdCode()
+{
+	return TCMD_RECVMANSESSIONINFO;
+}
+
+// 设置seq
+void RecvManSessionInfoTask::SetSeq(unsigned int seq)
+{
+	m_seq = seq;
+}
+
+// 获取seq
+unsigned int RecvManSessionInfoTask::GetSeq()
+{
+	return m_seq;
+}
+
+// 是否需要等待回复。若false则发送后释放(delete掉)，否则发送后会被添加至待回复列表，收到回复后释放
+bool RecvManSessionInfoTask::IsWaitToRespond()
+{
+	return false;
+}
+
+// 获取处理结果
+void RecvManSessionInfoTask::GetHandleResult(LCC_ERR_TYPE& errType, string& errMsg)
+{
+	errType = m_errType;
+	errMsg = m_errMsg;
+}
+
+// 未完成任务的断线通知
+void RecvManSessionInfoTask::OnDisconnect()
+{
+	// 不用回调
+}

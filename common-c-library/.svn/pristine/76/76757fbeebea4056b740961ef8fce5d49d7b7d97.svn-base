@@ -1,0 +1,70 @@
+/*
+ * HttpRequestConvertEnum.h
+ *
+ *  Created on: 2017-5-25
+ *      Author: Hunter.Mun
+ */
+
+#ifndef REQUESTCONVERTENUM_H_
+#define REQUESTCONVERTENUM_H_
+
+#include "HttpRequestEnum.h"
+#include <string>
+using namespace std;
+static const char* GetHttpSiteId(HTTP_OTHER_SITE_TYPE siteType) {
+    const char* siteId = "";
+
+    switch (siteType) {
+        case HTTP_OTHER_SITE_CL:
+            siteId = HTTP_OTHER_SYNCONFIG_CL;
+            break;
+        case HTTP_OTHER_SITE_IDA:
+            siteId = HTTP_OTHER_SYNCONFIG_IDA;
+            break;
+        case HTTP_OTHER_SITE_CD:
+            siteId = HTTP_OTHER_SYNCONFIG_CD;
+            break;
+        case HTTP_OTHER_SITE_LA:
+            siteId = HTTP_OTHER_SYNCONFIG_LA;
+            break;
+        case HTTP_OTHER_SITE_AD:
+            siteId = HTTP_OTHER_SYNCONFIG_AD;
+            break;
+        case HTTP_OTHER_SITE_LIVE:
+            siteId = HTTP_OTHER_SYNCONFIG_LIVE;
+            break;
+        case HTTP_OTHER_SITE_ALL:break;
+    }
+    return siteId;
+};
+
+static HTTP_OTHER_SITE_TYPE GetHttpSiteTypeByServerSiteId(const string& siteId){
+    HTTP_OTHER_SITE_TYPE siteType = HTTP_OTHER_SITE_UNKNOW;
+    if(siteId == HTTP_OTHER_SYNCONFIG_CL){
+        siteType = HTTP_OTHER_SITE_CL;
+    }else if(siteId == HTTP_OTHER_SYNCONFIG_IDA){
+        siteType = HTTP_OTHER_SITE_IDA;
+    }else if(siteId == HTTP_OTHER_SYNCONFIG_CD){
+        siteType = HTTP_OTHER_SITE_CD;
+    }else if(siteId == HTTP_OTHER_SYNCONFIG_LA){
+        siteType = HTTP_OTHER_SITE_LA;
+    }else if(siteId == HTTP_OTHER_SYNCONFIG_AD){
+        siteType = HTTP_OTHER_SITE_AD;
+    }else if(siteId == HTTP_OTHER_SYNCONFIG_LIVE){
+        siteType = HTTP_OTHER_SITE_LIVE;
+    }
+    return siteType;
+}
+
+// 获取指定位置的国家代码
+string GetCountryCode(int code);
+// 获取指定国家代码的位置
+int GetCountryCode(const string& code);
+// 获取其它国家代码的位置
+int GetOtherCountryCode();
+
+// 获取邮箱处理方式（0：SendChangeEmail 1:ReSend ）
+string GetHandleEmailCode(int type);
+
+#endif
+

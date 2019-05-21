@@ -1,0 +1,129 @@
+//
+//  LiveChatSender.h
+//  Common-C-Library
+//
+//  Created by Max on 2017/2/22.
+//  Copyright © 2017年 qpidnetwork. All rights reserved.
+//
+
+#ifndef ILiveChatSender_h
+#define ILiveChatSender_h
+
+#include <stdio.h>
+
+#include "ILiveChatManManager.h"
+#include "ILiveChatManManagerOperator.h"
+//#include "ILiveChatClient.h"
+#include <livechat/ILiveChatClient.h>
+#include <common/KLog.h>
+
+#include "LCTextManager.h"
+#include "LCEmotionManager.h"
+#include "LCVoiceManager.h"
+#include "LCPhotoManager.h"
+#include "LCVideoManager.h"
+#include "LCMagicIconManager.h"
+
+#include "LCUserItem.h"
+#include "LCUserManager.h"
+#include "LCInviteManager.h"
+#include "LCBlockManager.h"
+#include "LCContactManager.h"
+
+#include <manrequesthandler/RequestLiveChatController.h>
+#include <manrequesthandler/RequestOtherController.h>
+
+class LiveChatSender : public ILiveChatClientListener
+                        , public IRequestLiveChatControllerCallback
+                        , public IRequestOtherControllerCallback
+{
+public:
+    LiveChatSender(
+                      ILiveChatManManagerOperator* pOperator,
+                      ILiveChatManManagerListener* pListener,
+                      ILiveChatClient*	pClient,
+                      // 消息管理器
+                      LCTextManager* pTextMgr,
+                      LCEmotionManager* pEmotionMgr,
+                      LCVoiceManager* pVoiceMgr,
+                      LCPhotoManager* ppPhotoMgr,
+                      LCVideoManager* pVideoMgr,
+                      LCMagicIconManager* pMagicIconMgr,
+                      // 用户管理器
+                      LCUserManager* pUserMgr,
+                      LCInviteManager* pInviteMgr,
+                      // Http接口
+                      HttpRequestManager* pHttpRequestManager
+    );
+    ~LiveChatSender();
+    
+    // 发送待发消息列表处理
+    void SendMessageListProc(LCUserItem* userItem);
+    // 返回待发送消息错误处理
+    void SendMessageListFailProc(LCUserItem* userItem, LCC_ERR_TYPE errType);
+    
+    // 发送消息item
+    void SendMessageItem(LCMessageItem* item);
+    
+    // 发送文本消息处理
+    void SendTextMessageProc(LCMessageItem* item);
+    // 发送高级表情消息处理
+    void SendEmotionProc(LCMessageItem* item);
+    // 发送语音处理
+    void SendVoiceProc(LCMessageItem* item);
+    // 发送图片处理
+    void SendPhotoProc(LCMessageItem* item);
+    // 发送小高级表情消息处理
+    void SendMagicIconProc(LCMessageItem* item);
+   
+private:
+    // Http
+    virtual void OnSendPhoto(long requestId, bool success, const string& errnum, const string& errmsg, const LCSendPhotoItem& item) override;
+   
+    // ------------------- IRequestLiveChatControllerCallback -------------------
+private:
+    virtual void OnUploadVoice(long requestId, bool success, const string& errnum, const string& errmsg, const string& voiceId) override;
+    
+private:
+    // Livechat
+    void OnSendTextMessage(const string& inUserId, const string& inMessage, int inTicket, LCC_ERR_TYPE err, const string& errmsg) override;
+    void OnSendEmotion(const string& inUserId, const string& inEmotionId, int inTicket, LCC_ERR_TYPE err, const string& errmsg) override;
+    void OnSendVGift(const string& inUserId, const string& inGiftId, int inTicket, LCC_ERR_TYPE err, const string& errmsg) override;
+    void OnSendVoice(const string& inUserId, const string& inVoiceId, int inTicket, LCC_ERR_TYPE err, const string& errmsg) override;
+    void OnGetVoiceCode(const string& inUserId, int ticket, LCC_ERR_TYPE err, const string& errmsg, const string& voiceCode) override;
+    void OnSendPhoto(LCC_ERR_TYPE err, const string& errmsg, int ticket) override;
+    void OnSendMagicIcon(const string& inUserId, const string& inIconId, int inTicket, LCC_ERR_TYPE err, const string& errmsg) override;
+    
+private:
+    // 设置用户在线状态，若用户在线状态改变则callback通知listener
+    void SetUserOnlineStatus(LCUserItem* userItem, USER_STATUS_TYPE statusType);
+    // 根据错误类型设置用户在线状态，若用户在线状态改变则callback通知listener
+    void SetUserOnlineStatusWithLccErrType(LCUserItem* userItem, LCC_ERR_TYPE errType);
+	// 发送图片处理（仅LiveChat消息）
+	void SendPhotoLiveChatMsgProc(LCMessageItem* item);
+    // 发送消息成功后，更新会话状态(包括文字，表情，图片)，功能：为了endtalk的取消，判断是否时男士自动邀请
+    void OnSendMessageSessionProcess(LCMessageItem* item);
+    
+private:
+    ILiveChatManManagerOperator* m_operator;
+    ILiveChatManManagerListener* m_listener;	// 回调
+    ILiveChatClient*	m_client;               // LiveChat客户端
+    
+    // 消息管理器
+    LCTextManager*		m_textMgr;		// 文本管理器
+    LCEmotionManager*	m_emotionMgr;	// 高级表情管理器
+    LCVoiceManager*		m_voiceMgr;		// 语音管理器
+    LCPhotoManager*		m_photoMgr;		// 图片管理器
+    LCVideoManager*		m_videoMgr;		// 视频管理器
+    LCMagicIconManager* m_magicIconMgr; //小高级表情管理器
+    
+    // 用户管理器
+    LCUserManager*		m_userMgr;		// 用户管理器
+    LCInviteManager*	m_inviteMgr;	// 邀请管理器
+    
+    // Http接口
+    RequestLiveChatController* m_requestController;		// LiveChat请求控制器
+    RequestOtherController*	m_requestOtherController;	// Other请求控制器
+};
+
+#endif /* LiveChatSender_h */

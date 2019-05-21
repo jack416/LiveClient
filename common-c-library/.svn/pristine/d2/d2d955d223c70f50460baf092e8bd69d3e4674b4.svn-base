@@ -1,0 +1,117 @@
+//
+//  LiveChatSessionManager.h
+//  Common-C-Library
+//
+//  Created by Max on 2017/2/20.
+//  Copyright © 2017年 qpidnetwork. All rights reserved.
+//
+
+#ifndef LiveChatSessionManager_h
+#define LiveChatSessionManager_h
+
+#include <stdio.h>
+
+#include "ILiveChatManManager.h"
+#include "ILiveChatManManagerOperator.h"
+#include "LiveChatSender.h"
+
+#include "LCTextManager.h"
+#include "LCEmotionManager.h"
+#include "LCVoiceManager.h"
+#include "LCPhotoManager.h"
+#include "LCVideoManager.h"
+#include "LCMagicIconManager.h"
+
+#include "LCUserItem.h"
+#include "LCUserManager.h"
+#include "LCInviteManager.h"
+#include "LCBlockManager.h"
+#include "LCContactManager.h"
+
+#include <manrequesthandler/RequestLiveChatController.h>
+#include <manrequesthandler/RequestOtherController.h>
+
+#include "LiveChatSender.h"
+
+class RequestItem;
+class LiveChatSessionManager : public ILiveChatManManagerTaskCallback
+                                , public IRequestLiveChatControllerCallback
+                                , public IRequestOtherControllerCallback
+                                , public ILiveChatClientListener
+                                {
+public:
+    LiveChatSessionManager(
+                           ILiveChatManManagerOperator* pOperator,
+                           ILiveChatManManagerListener* pListener,
+                           ILiveChatClient*	pClient,
+                           LiveChatSender* pLiveChatSender,
+                           LCUserManager* pUserMgr,
+                           HttpRequestManager* pHttpRequestManager
+                           );
+    
+    ~LiveChatSessionManager();
+    
+    // 重置参数
+    void Reset();
+    void Start();
+                                    
+    // 发送消息
+    bool SendMsg(LCUserItem* userItem, LCMessageItem* msgItem);
+    // 结束会话
+    bool EndTalk(LCUserItem* userItem);
+                                    
+private:
+    // 定时任务处理
+    void OnLiveChatManManagerTaskRun(TaskParam param) override;
+    void OnLiveChatManManagerTaskClose(TaskParam param) override;
+
+    // 是否立即发送消息给用户
+    bool IsSendMessageNow(LCUserItem* userItem);
+                                    
+    // 检查试聊券
+    bool CheckCouponProc(LCUserItem* userItem);
+    void OnCheckCoupon(long requestId, bool success, const Coupon& item, const string& userId, const string& errnum, const string& errmsg) override;
+
+    // 是否检测试聊券
+    bool IsCheckCoupon(LCUserItem* userItem);
+
+    // 试聊券请求处理函数
+    bool UseTryTicketProc(LCUserItem* userItem);
+    void OnUseTryTicket(const string& inUserId, LCC_ERR_TYPE err, const string& errmsg, const string& userId, TRY_TICKET_EVENT tickEvent) override;
+    void OnUseCoupon(long requestId, bool success, const string& errnum, const string& errmsg, const string& userId, const string& couponid) override;
+    
+    // 检查用户信息
+    bool GetCountProc(LCUserItem* userItem);
+    void OnGetCount(long requestId, bool success, const string& errnum, const string& errmsg, const OtherGetCountItem& item) override;
+   
+    // 发送待发消息列表
+    void SendMessageList(LCUserItem* userItem);
+                                
+    // 定时业务处理器
+    void RequestHandler(RequestItem* item);
+    
+    // 结束会话
+    void OnEndTalk(const string& inUserId, LCC_ERR_TYPE err, const string& errmsg) override;
+                                    
+    // 公共信息获取
+    ILiveChatManManagerOperator* m_operator;
+    // 回调
+    ILiveChatManManagerListener* m_listener;
+    // LiveChat客户端
+    ILiveChatClient* m_client;
+    // 消息发送器
+    LiveChatSender* m_liveChatSender;
+            
+    // 用户管理器
+    LCUserManager*		m_userMgr;		// 用户管理器
+                                    
+    // LiveChat请求控制器
+    RequestLiveChatController* m_requestController;
+    // Other请求控制器
+    RequestOtherController*	m_requestOtherController;
+
+    map_lock<long, LCUserItem*> m_inviteMsgMap;
+            
+};
+
+#endif /* LiveChatSessionManager_h */
